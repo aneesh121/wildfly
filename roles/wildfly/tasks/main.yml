@@ -1,0 +1,56 @@
+---
+  
+- name: Adding wildfly group
+  group:
+    name: "{{wildfly_user}}"
+    state: present
+
+- name: Add wildfly user
+  user:
+    name: "{{wildfly_user}}"
+    groups: "{{wildfly_group}}"
+    home: "{{wildfly_home}}"
+    expires: 1830333670
+
+- name: Creating the wildfly home directory
+  file:
+    path: "{{wildfly_home}}"
+    state: directory
+    owner: wildfly
+    group: wildfly
+    mode: 0775
+    recurse: yes
+
+- name: Install Java and basic dependencies
+  yum: name={{item}} state=present
+  with_items:
+   - unzip
+   - java-{{jdk_version}}-openjdk
+  
+- name: Download and extract Wildfly  bundle
+  unarchive:
+    src: "{{wildfly_url}}/{{wildfly_version}}/{{wildfly_package}}"
+    dest: /apps
+    remote_src: yes
+    
+- name: Truncate the install directory version details
+  shell: rsync --delete -zvhrd  /apps/wildfly-11.0.0.Final/ /apps/wildfly/
+  
+- name: Copying templates
+  template:
+    src: "{{item.src}}"
+    dest: "{{item.dest}}"
+  with_items:
+   - { src: standalone.xml,dest: /apps/wildfly/standalone/configuration/ }
+   - { src: standalone.conf,dest: /apps/wildfly/bin/ }  
+  notify: restart wildfly
+ 
+- name: Change ownership of WildFly installation
+  file: path="{{wildfly_home}}" owner=wildfly group=wildfly state=directory recurse=yes
+  
+- name: Copy the init script
+  copy: src=wildfly-init.sh dest=/etc/init.d/wildfly mode=0755
+  
+  
+- name: Enable WildFly to be started at boot
+  service: name=wildfly enabled=yes state=restarted

@@ -1,0 +1,10 @@
+---
+- hosts: all
+ 
+  roles:
+    - wildfly
+
+  vars_files:
+    - group_vars/wildfly/vars
+    - group_vars/app-deploy/vars
+
