@@ -3,6 +3,7 @@
  
   roles:
     - wildfly
+    - app-deploy
 
   vars_files:
     - group_vars/wildfly/vars

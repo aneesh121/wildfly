@@ -1,0 +1,33 @@
+---
+
+- name: Pull hendrix war file from S3 bucket
+  s3_sync:
+    bucket: hendrix-war-deploy 
+    file_root: roles/app-deploy/files/
+    file_change_strategy: force
+    permission: public-read
+    include: "*.war"
+    exclude: ".*"
+
+- name: Pull hendrix static files from S3 bucket
+  s3_sync:
+    bucket: hendrix-static-deploy
+    file_root: roles/app-deploy/files/
+    file_change_strategy: force
+    permission: public-read
+    include: "*"
+    exclude: ".git"
+
+- name: Deploy the hendrix  war file
+  jboss:
+    src: "{{hendrix_build_war_name}}".war
+    deployment: "{{hendrix_deploy_war_name}}".war
+    state: present
+
+- name: Deploy static assets to data directory
+  synchronize:
+    src: roles/app-deploy/files/data
+    dest: /apps/wildfly/standalone/
+    delete: yes
+    recursive: yes
+
