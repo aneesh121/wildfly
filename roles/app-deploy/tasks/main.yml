@@ -9,14 +9,21 @@
     include: "*.war"
     exclude: ".*"
 
-- name: Pull hendrix static files from S3 bucket
-  s3_sync:
+- name: Deploy Static files, Step 1
+  s3:
+    mode: list
     bucket: hendrix-static-deploy
-    file_root: roles/app-deploy/files/
-    file_change_strategy: force
+    prefix: hendrix-static-deploy/
+  register: s3_bucket_items
+
+- name: Deploy Static files, Step 2
+  s3:
+    mode: get
+    bucket: hendrix-static-deploy
+    object: "{{ item }}"
+    dest: "roles/app-deploy/files/"
     permission: public-read
-    include: "*"
-    exclude: ".git"
+  with_items: s3_bucket_items.s3_keys
 
 - name: Deploy the hendrix  war file
   jboss:
